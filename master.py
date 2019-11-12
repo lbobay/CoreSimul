@@ -50,7 +50,12 @@ for l in f:
 		a=l.split("=")
 		attribute=a[0]
 		if attribute[0] != "#":
-			value = a[1].split("#")[0].strip(" ").strip("\t").strip(" ")
+			value = a[1].split("#")[0]
+			while " " in value:
+				value = value.replace(" ","")
+			while "\t" in value:
+				value = value.replace("\t","")
+			print(value)
 			try:
 				parameters[attribute]=value
 			except KeyError:

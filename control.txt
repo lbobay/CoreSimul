@@ -1,6 +1,6 @@
 
 
-OUTPUT=test	    					# Output folder
+OUTPUT=test  	    					# Output folder
 KAPPA=1.1       					# Transition/transversion parameter (default = 1)	
 GC=45		  						# GC content (default = 50%)
 LENGTH=20000						# Genome length (default = 10,000bp)
