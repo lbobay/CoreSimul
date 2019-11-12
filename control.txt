@@ -1,0 +1,12 @@
+
+
+OUTPUT=test	    					# Output folder
+KAPPA=1.1       					# Transition/transversion parameter (default = 1)	
+GC=45		  						# GC content (default = 50%)
+LENGTH=20000						# Genome length (default = 10,000bp)
+RESCALE= 0.6						# Tree rescaling coefficient (default = 1, no rescaling)
+RHO=1.5        	 					# Recombination rate (default = 0, no recombination)
+DELTA=  200							# Average recombination tract length (default = 100bp)
+CODONS=0.1,0.05,0.85				# Mutation rate at codon positions (default = 0.33,0.33,0.33, uniform rates)
+TREE=  example.tree					# Tree file used for the simulations (nwk format)
+
