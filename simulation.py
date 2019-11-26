@@ -441,6 +441,10 @@ while nb <= NB:
 	nb+=1
 
 
+print("total_m=",total_m,"total_r=",total_r)
+
+
+
 h=open(path + "nu.txt","w")
 if len(NU)> 0:
 	h.write( str(sum(NU) / len(NU)) + "\n")
@@ -467,9 +471,25 @@ h.close()
 
 
 
-print("Effective recombination rate r/m= ", COEFF * DELTA *  sum(NU) / len(NU))
+
 h=open(path + "rm.txt","w")
-h.write("r/m= " + str(COEFF * DELTA *  sum(NU) / len(NU)) + "\n")
+if COEFF == 0:
+	h.write("r/m= 0.0\n")
+	print("Effective recombination rate r/m= 0.0")
+else:
+	h.write("r/m= " + str(COEFF * DELTA *  sum(NU) / len(NU)) + "\n")
+	print("Effective recombination rate r/m= ", COEFF * DELTA *  sum(NU) / len(NU))
+h.close()
+
+
+h=open(path + "detail.txt","w")
+if COEFF == 0:
+	rm="0.0"
+	nu = "NA"
+else:
+	rm=str(COEFF * DELTA *  sum(NU) / len(NU))
+	nu = str(sum(NU) / len(NU)) 
+h.write("rm= " + rm + "\n" + "Rho= " + str(COEFF) + "\nDelta= " + str(DELTA) + "\nNu= " + str(nu) + "\nTotal_mutations= " + str(total_m) + "\nTotal_recombination_events= " + str(total_r) + "\n" )
 h.close()
 
 print("DONE")
