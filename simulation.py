@@ -443,7 +443,7 @@ while nb <= NB:
 
 print("total_m=",total_m,"total_r=",total_r)
 
-
+#print(NU[:100])
 
 h=open(path + "nu.txt","w")
 if len(NU)> 0:
