@@ -24,7 +24,7 @@ control_file = sys.argv[-1]
 
 for stuff in sys.argv:
 	if "master.py" in stuff:
-		loc = stuff.split("master.py")[0]
+		loc = stuff.split(stuff)[0]
 
 print("Usage:  python master.py   control.txt")
 

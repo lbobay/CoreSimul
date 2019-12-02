@@ -1,0 +1,6 @@
+rm= 4.464357962284683
+Rho= 1.0
+Delta= 200
+Nu= 0.02232178981142341
+Total_mutations= 25344
+Total_recombination_events= 23259
