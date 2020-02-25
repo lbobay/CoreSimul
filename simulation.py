@@ -75,7 +75,9 @@ L = int(sys.argv[-5])
 GC = float(sys.argv[-6])
 kappa = float(sys.argv[-7])
 sub = sys.argv[-8].split(",")
-
+path_to_seq = sys.argv[-9]
+sub_rate= sys.argv[-10]
+MATRIX = sys.argv[-11]
 
 
 un,deux,trois= sub[0].strip(" "),sub[1].strip(" "),sub[2].strip(" ")
@@ -109,14 +111,19 @@ other1["C"],other2["C"]="G","A"
 other1["G"],other2["G"]="C","T"
 
 
-# Creates the substitution matrix with Kappa
+# Creates the substitution matrix with Kappa or sub_rate
 probability={}
-if kappa ==1:
+if MATRIX == "JC69":
 	for N in alpha:
 		toto = list(alpha)
 		toto.remove(N)
 		probability[N] = toto
-else:
+elif MATRIX == "K2P" or kappa != 1:
+	if sub_rate != "no" and sub_rate != "none":
+		if kappa==1:
+			kappa = sub_rate.strip("(").strip(")")
+			kappa = sub_rate.strip(" ")
+			kappa=float(kappa)
 	for N in alpha:
 		probability[N]=[]
 		i=0
@@ -128,11 +135,72 @@ else:
 			probability[N].append(other1[N])
 			probability[N].append(other2[N])
 			i+=1
+elif MATRIX == "K3P":
+	beta={}
+	beta["A"]="C"
+	beta["C"]="A"
+	beta["G"]="T"
+	beta["T"]="G"
+	gamma={}
+	gamma["A"]="T"
+	gamma["T"]="A"
+	gamma["C"]="G"
+	gamma["G"]="C"
+	sub_rate = sub_rate.strip("(").strip(")")
+	sub_rate = sub_rate.strip(" ")
+	toto = sub_rate.split(",")
+	ts,tv1,tv2= float(toto[0].strip(" ")) ,  float(toto[1].strip(" "))  , float(toto[2].strip(" ")) 
+	for N in alpha:
+		probability[N]=[]
+		i=0
+		while i < round(100 * ts,0):
+			probability[N].append(transition[N])
+			i+=1
+		i=0
+		while i < round(100 * tv1,0):
+			probability[N].append(beta[N])
+			i+=1
+		i=0
+		while i < round(100 * tv2,0):
+			probability[N].append(gamma[N])
+			i+=1
+elif MATRIX == "GTR":
+	sub_rate = sub_rate.strip("(").strip(")")
+	sub_rate = sub_rate.strip(" ")
+	toto = sub_rate.split(",")
+	a,b,c,d,e,f = float(toto[0].strip(" ")) ,  float(toto[1].strip(" "))  , float(toto[2].strip(" ")) ,float(toto[3].strip(" ")) ,  float(toto[4].strip(" "))  , float(toto[5].strip(" ")) 
+	for N in alpha:
+		probability[N]=[]
+	i=0
+	while i < round(100 * a,0):
+		probability["A"].append("G")
+		probability["G"].append("A")
+		i+=1
+	i=0
+	while i < round(100 * b,0):
+		probability["A"].append("C")
+		probability["C"].append("A")
+		i+=1
+	i=0
+	while i < round(100 * c,0):
+		probability["A"].append("T")
+		probability["T"].append("A")
+		i+=1
+	while i < round(100 * d,0):
+		probability["G"].append("C")
+		probability["C"].append("G")
+		i+=1
+	while i < round(100 * e,0):
+		probability["G"].append("T")
+		probability["T"].append("G")
+		i+=1
+	while i < round(100 * f,0):
+		probability["C"].append("T")
+		probability["T"].append("C")
+		i+=1
 
-
-
-for N in alpha:
-	print("Probability:",N," ",probability[N]," ",len(probability[N]))
+#for N in alpha:
+#	print("Probability:",N," ",probability[N]," ",len(probability[N]))
 
 
 
@@ -221,7 +289,7 @@ GC = round(GC * 100,0)
 AT = 10000-GC
 AT = round(AT,0)
 
-print(GC," ",AT)
+#print(GC," ",AT)
 ALPHA=[]
 i=0
 while i < GC:
@@ -236,20 +304,33 @@ while i < AT:
 	i+=1
 
 
-print("ALPHA= ", len(ALPHA))
+#print("ALPHA= ", len(ALPHA))
 
 
+if path_to_seq == "none" or path_to_seq == "NA" or path_to_seq.lower() ==  "no":
+	tmp=[]
+	while len(tmp) < L:
+		tmp.append(random.choice(ALPHA))
 
-tmp=[]
-while len(tmp) < L:
-	tmp.append(random.choice(ALPHA))
+	seq = "".join(tmp)
 
-seq = "".join(tmp)
-
+else:
+	nb=0
+	seq=""
+	f=open(path_to_seq,"r")
+	for l in f:
+		if l[0] == ">":
+			nb+=1
+		else:
+			seq+=l.strip("\n").upper()
+	f.close()
+	if nb > 1:
+		print("MULTIPLE SEQUENCES PROVIDED, THEY WILL BE MERGED TOGETHER")
 
 sequence={}
 for node in roots:
 	sequence[node] = seq 
+		
 
 print("Traceback")
 
@@ -327,8 +408,8 @@ for node in cumul:
 		if branch[node] < MIN:
 			MIN= branch[node]
 
-print("MIN= ",MIN)
-print("MAX= ",MAX)
+#print("MIN= ",MIN)
+#print("MAX= ",MAX)
 scan = {}
 nb=0
 i = 0
@@ -475,10 +556,14 @@ h.close()
 h=open(path + "rm.txt","w")
 if COEFF == 0:
 	h.write("r/m= 0.0\n")
-	print("Effective recombination rate r/m= 0.0")
+	print("###################################################")
+	print("###### Effective recombination rate r/m= 0.0 ######")
+	print("###################################################")
 else:
 	h.write("r/m= " + str(COEFF * DELTA *  sum(NU) / len(NU)) + "\n")
-	print("Effective recombination rate r/m= ", COEFF * DELTA *  sum(NU) / len(NU))
+	print("########################################################################")
+	print("######## Effective recombination rate r/m= ", COEFF * DELTA *  sum(NU) / len(NU)," ########")
+	print("########################################################################")
 h.close()
 
 

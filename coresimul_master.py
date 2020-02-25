@@ -24,7 +24,9 @@ control_file = sys.argv[-1]
 
 for stuff in sys.argv:
 	if "master.py" in stuff:
-		loc = stuff.split(stuff)[0]
+		tmp = stuff.split("/")[-1]
+		loc = stuff.split(tmp)[0]
+		print("loc= ",loc,stuff)
 
 print("Usage:  python master.py   control.txt")
 
@@ -40,7 +42,9 @@ parameters["DELTA"]=100
 parameters["RHO"]=0
 parameters["CODONS"]="0.33,0.33,0.33"
 parameters["RESCALE"]=1
-
+parameters["SEQUENCE"]="none"
+parameters["SUB_MODEL"] = "JC69"
+parameters["SUB_RATE"]="none"
 
 
 f=open(control_file,"r")
@@ -55,7 +59,7 @@ for l in f:
 				value = value.replace(" ","")
 			while "\t" in value:
 				value = value.replace("\t","")
-			print(value)
+			#print(value)
 			try:
 				parameters[attribute]=value
 			except KeyError:
@@ -80,6 +84,50 @@ kappa = float(parameters["KAPPA"])
 DELTA = int(parameters["DELTA"])
 COEFF = float(parameters["RHO"])
 sub = parameters["CODONS"]
+path_to_seq = parameters["SEQUENCE"]
+sub_rate = parameters["SUB_RATE"]
+model = parameters["SUB_MODEL"]
+
+if model not in ["JC69","K2P","K3P","GTR"]:
+	print("Unknown model:",model)
+	print("Exiting...")
+	exit()
+
+if sub_rate != "none" and model != "K2P":
+	kappa=1
+
+if model == "K2P" and sub_rate != "none" and kappa != 1:
+	sub_rate = str(kappa)
+
+if model == "JC69":
+	kappa=1
+
+if model == "GTR" or model == "K3P": 
+	if sub_rate == "none":
+		print("NO RATES PROVIDED FOR ",model," model. Switching to JC69")
+		model = "JC69"
+
+if model == "JC69":
+	sub_rate="none"
+
+
+if model == "K2P" and "," in str(sub_rate):
+	print("Invalid SUB_RATE option for K2P model:",sub_rate)
+	print("1 parameter expected")
+	print("Exiting...")
+	exit() 
+elif model == "K3P" and  sub_rate.count(",") != 2:
+	print("Invalid SUB_RATE option for K3P model:",sub_rate)
+	print("3 parameters expected")
+	print("Exiting...")
+	exit() 
+elif model == "GTR" and  sub_rate.count(",") != 5:
+	print("Invalid SUB_RATE option for GTR model:",sub_rate)
+	print("6 parameters expected")
+	print("Exiting...")
+	exit() 
+
+
 while " " in sub:
 	sub=sub.replace(" ","")
 
@@ -126,10 +174,12 @@ print("GC%= ",GC,"% (default=50%)")
 print("Branch rescaling= ",coeff," (default=1, no rescaling)")
 print("Transition/Transversion bias, Kappa= ",kappa," (default=1, no bias)")
 print("CODONS Frequency= ",sub,"")
+print("STARTING GENOME= ",path_to_seq)
+print("SUBSTITUTION MODEL= ",model, "with rate(s) ",sub_rate)
 print("################\n")
 
 
-os.system("python " + loc + "simulation.py " + sub + " " + str(kappa) + " " + str(GC) + " " + str(L) +  " " + str(COEFF) + " " + str(DELTA) + " "  + str(coeff) + " " + path)
+os.system("python " + loc + "simulation.py " + model + " " + sub_rate + " "  + path_to_seq + " " + sub + " " + str(kappa) + " " + str(GC) + " " + str(L) +  " " + str(COEFF) + " " + str(DELTA) + " "  + str(coeff) + " " + path)
 
 
 
