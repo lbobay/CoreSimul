@@ -28,7 +28,7 @@ for stuff in sys.argv:
 		loc = stuff.split(tmp)[0]
 		print("loc= ",loc,stuff)
 
-print("Usage:  python master.py   control.txt")
+print("Usage:  python coresimul_master.py   control.txt")
 
 print(loc)
 
@@ -45,14 +45,17 @@ parameters["RESCALE"]=1
 parameters["SEQUENCE"]="none"
 parameters["SUB_MODEL"] = "JC69"
 parameters["SUB_RATE"]="none"
-
+parameters["GAIN_RATE"]="none"
+parameters["LOSS_RATE"]="none"
+parameters["MIN_DELTA"]="1"
+parameters["EXP_COEFF"]="no"
 
 f=open(control_file,"r")
 for l in f:
 	l=l.strip("\n").strip("\r").strip(" ")
 	if "=" in l:
 		a=l.split("=")
-		attribute=a[0]
+		attribute=a[0].split("\t")[0].strip(" ")
 		if attribute[0] != "#":
 			value = a[1].split("#")[0]
 			while " " in value:
@@ -87,6 +90,20 @@ sub = parameters["CODONS"]
 path_to_seq = parameters["SEQUENCE"]
 sub_rate = parameters["SUB_RATE"]
 model = parameters["SUB_MODEL"]
+gain_rate=parameters["GAIN_RATE"]
+loss_rate = parameters["LOSS_RATE"]
+min_delta = parameters["MIN_DELTA"]
+
+if parameters["EXP_COEFF"] == "no" or parameters["EXP_COEFF"] == "n":
+	exp_coeff = "no"
+elif parameters["EXP_COEFF"] == "yes" or parameters["EXP_COEFF"] == "y":
+	exp_coeff = 18.1
+else:
+	try:
+		exp_coeff = float(parameters["EXP_COEFF"])
+	except ValueError:
+		print("EXP_COEFF must be 'yes', 'no' or a numeric value. Exiting...")
+		exit()
 
 if model not in ["JC69","K2P","K3P","GTR"]:
 	print("Unknown model:",model)
@@ -151,6 +168,29 @@ else:
 		print("Output folder already exists. Previous files will be lost.")
 
 
+tag=1
+if parameters["GAIN_RATE"]=="none" or parameters["GAIN_RATE"]=="no" or parameters["GAIN_RATE"]==0:
+	tag = 0
+
+if tag ==0:
+	if parameters["LOSS_RATE"]=="none" or parameters["LOSS_RATE"]=="no" or parameters["LOSS_RATE"]==0:
+		tag = 0
+	else:
+		tag=1
+
+if tag==1:
+	if snake=="2":
+		try:
+			os.mkdir(path + "genes")
+		except OSError:
+			print("Output folder already exists. Previous files will be lost.")
+	else:
+		try:
+			os.mkdir(path + "genes")
+		except FileExistsError:
+			print("Output folder already exists. Previous files will be lost.")
+
+	
 
 print("1. Reading the tree")
 os.system("python " +  loc + "extract_names.py " + path + " " + TREE)
@@ -176,10 +216,13 @@ print("Transition/Transversion bias, Kappa= ",kappa," (default=1, no bias)")
 print("CODONS Frequency= ",sub,"")
 print("STARTING GENOME= ",path_to_seq)
 print("SUBSTITUTION MODEL= ",model, "with rate(s) ",sub_rate)
+print("GAIN_RATE=",gain_rate)
+print("LOSS_RATE=",loss_rate)
+print("MIN_DELTA=",min_delta)
 print("################\n")
 
 
-os.system("python " + loc + "simulation.py " + model + " " + sub_rate + " "  + path_to_seq + " " + sub + " " + str(kappa) + " " + str(GC) + " " + str(L) +  " " + str(COEFF) + " " + str(DELTA) + " "  + str(coeff) + " " + path)
+os.system("python " + loc + "simulation.py " + str(exp_coeff) + " " + min_delta + " " + loss_rate + " " + gain_rate + " " + model + " " + sub_rate + " "  + path_to_seq + " " + sub + " " + str(kappa) + " " + str(GC) + " " + str(L) +  " " + str(COEFF) + " " + str(DELTA) + " "  + str(coeff) + " " + path)
 
 
 

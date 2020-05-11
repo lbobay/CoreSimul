@@ -78,7 +78,13 @@ sub = sys.argv[-8].split(",")
 path_to_seq = sys.argv[-9]
 sub_rate= sys.argv[-10]
 MATRIX = sys.argv[-11]
+gain_rate = sys.argv[-12]        
+loss_rate = sys.argv[-13] 
+min_delta = float(sys.argv[-14])
+exp_coeff = sys.argv[-15]
 
+if exp_coeff != "no":
+	exp_coeff = float(exp_coeff)
 
 un,deux,trois= sub[0].strip(" "),sub[1].strip(" "),sub[2].strip(" ")
 un,deux,trois = float(un),float(deux),float(trois)
@@ -205,33 +211,60 @@ elif MATRIX == "GTR":
 
 
 
-CODONS = [un,un + deux,100]
+#CODONS = [un,un + deux,100]
 
-ALL_POS = range(100)
+#ALL_POS = range(100)
 
 # MODIFY THIS FUNCTION TO INCLUDE CODON BIAS
+#def single(seq):
+#	N="-"
+#	while N == "-":
+#		i = random.choice(range(len(seq)))
+#		frame = random.choice(ALL_POS) + 1
+#		if frame <= CODONS[0]:
+#			F=1
+#		elif frame <= CODONS[1]:
+#			F=2
+#		elif frame > CODONS[1]:
+#			F=0
+#		if i%3==F:
+#			pass
+#		elif (i+1)%3 == F:
+#			i=i+1
+#		elif (i+2)%3 == F:
+#			i=i+2
+#		try:
+#			N = seq[i]
+#		except IndexError:
+#			i=i-3
+#			N = seq[i]
+#	new = random.choice(probability[N])
+#	out = seq[:i] + new + seq[i+1:]	
+#	return out
+
+CODONS = [un,un + deux,100]
+
 def single(seq):
-	i = random.choice(range(len(seq)))
-	frame = random.choice(ALL_POS) + 1
-	if frame <= CODONS[0]:
-		F=1
-	elif frame <= CODONS[1]:
-		F=2
-	elif frame > CODONS[1]:
-		F=0
-	if i%3==F:
-		pass
-	elif (i+1)%3 == F:
-		i=i+1
-	elif (i+2)%3 == F:
-		i=i+2
-	try:
-		N = seq[i]
-	except IndexError:
-		i=i-3
-		N = seq[i]
+	N="-"
+	while N == "-":
+		I = random.choice(range(int(len(seq)/3)))
+		I=I*3
+		CODON = seq[I:I+3]
+		number = 100 * random.random()
+		un,deux,trois = CODONS[0], CODONS[1], CODONS[2]
+		if number < un:
+			i=0
+		elif number >= un and number < deux:
+			i=1
+		elif number >= deux:
+			i=2
+		try:
+			N = seq[I+i]
+		except IndexError:
+			I=I-3
+			N = seq[I+i]
 	new = random.choice(probability[N])
-	out = seq[:i] + new + seq[i+1:]	
+	out = seq[:I+i] + new + seq[I+i+1:]	
 	return out
 
 
@@ -324,6 +357,24 @@ else:
 		else:
 			seq+=l.strip("\n").upper()
 	f.close()
+	GC = (seq.count("G") + seq.count("C")) / (seq.count("A") + seq.count("T") + seq.count("G") + seq.count("C"))
+	GC = round(GC * 100,0)
+	AT = 10000-GC
+	AT = round(AT,0)
+
+	#print(GC," ",AT)
+	ALPHA=[]
+	i=0
+	while i < GC:
+		ALPHA.append("G")
+		ALPHA.append("C")
+		i+=1
+
+	i=0
+	while i < AT:
+		ALPHA.append("A")
+		ALPHA.append("T")
+		i+=1
 	if nb > 1:
 		print("MULTIPLE SEQUENCES PROVIDED, THEY WILL BE MERGED TOGETHER")
 
@@ -429,7 +480,9 @@ while i < MAX:
 	i+=MIN/2
 
 #for vector in scan:
-#	print vector," ",scan[vector]
+#	print("scan:",vector," ",scan[vector])
+
+
 
 
 process={}
@@ -444,6 +497,11 @@ for vector in scan:
 	process[nb]=[tmp,max(DEBUT),min(FIN)]
 
 
+#for nb in process:
+#	print(nb,process[nb])
+
+
+
 sequence={}
 sequence["root"] = seq 
 
@@ -454,9 +512,53 @@ NB = max(process.keys())
 
 
 
+
+
+
 ########  Simulate evolution with recombination
 
 print("Simulate evolution with recombination AND SELECTION")
+
+LENGTH,LENGTH_CUMUL={},{}
+for node in branch:
+	LENGTH[node],LENGTH_CUMUL[node]=L,L
+
+LENGTH["root"],LENGTH_CUMUL["root"]=L,L
+
+
+
+indel=""
+while len(indel)<999:
+	indel+="-"
+
+
+try:
+	gain_rate = float(gain_rate)
+	if gain_rate > 0:
+		GAINS= "yes"
+	else:
+		GAINS = "no"
+except ValueError:
+	GAINS = "no"
+
+
+try:
+	loss_rate = float(loss_rate)
+	if loss_rate > 0:
+		LOSSES= "yes"
+	else:
+		LOSSES = "no"
+except ValueError:
+	LOSSES = "no"
+
+
+if GAINS == "no":
+	print("No gene gains will be simulated")
+if LOSSES == "no":
+	print("No gene losses will be simulated")
+
+total_gains=0
+total_losses=0
 
 total_m,total_r = 0,0
 NU=[]
@@ -469,26 +571,48 @@ while nb <= NB:
 			pass
 		else:
 			sequence[node] = sequence[parent[node]]
+			LENGTH[node],LENGTH_CUMUL[node] = LENGTH[parent[node]],LENGTH_CUMUL[parent[node]]
 	deb,fin = process[nb][1],process[nb][2]
 	segment = fin - deb
 	MEGA=[]
 	dico={}
-	for node in LIST:
-		mutations = numpy.random.poisson(L * segment)
+	for node in LIST: # Define the number of mutations and recombination events in the branch
+		#print("node in segment=",node)
+		mutations = numpy.random.poisson(LENGTH[node] * segment)
 		i=1
 		while i <= mutations:
 			resu = node + "_m"
 			MEGA.append(resu)
 			i+=1
-		recomb = numpy.random.poisson(L * segment * COEFF)
+		recomb = numpy.random.poisson(LENGTH[node] * segment * COEFF)
 		i=1
 		while i <= recomb:
 			resu = node + "_r"
 			MEGA.append(resu)
 			i+=1
 		dico[node] = [mutations,recomb]
+		if GAINS == "yes":
+			gains = numpy.random.poisson(LENGTH[node] * segment * gain_rate)
+			i=1
+			while i <= gains:
+				point= int(round(float(LENGTH_CUMUL[node] / 999.0),0))
+				insertion = random.choice(range(point + 1)) * 999
+				resu = node + "_gain_" + str(insertion) 
+				MEGA.append(resu)
+				i+=1
+		if LOSSES == "yes":
+			losses = numpy.random.poisson(LENGTH[node] * segment * loss_rate)
+			i=1
+			while i <= losses:
+				resu = node + "_loss"
+				MEGA.append(resu)
+				i+=1
 	random.shuffle(MEGA)
-	for resu in MEGA:
+	mega_i = 0
+	while mega_i < len(MEGA):
+		#print("resu=",resu)
+		resu = MEGA[mega_i]
+		mega_i +=1
 		a = resu.split("_")
 		node = a[0]
 		event = a[1]
@@ -501,12 +625,70 @@ while nb <= NB:
 				copy.remove(node)
 				donor = random.choice(copy)
 				delta = numpy.random.exponential(DELTA)
-				start = random.choice(range(L))
-				end = int(round(start + delta,0))
+				if delta < min_delta:
+					delta = min_delta
+				milou="-"
+				TINTIN=0
+				while milou == "-":
+					start = random.choice(range(LENGTH_CUMUL[node]))
+					end = int(round(start + delta,0))
+					if end >= LENGTH_CUMUL[node]:
+						end = LENGTH_CUMUL[node] - 1
+					A,B,C,D = sequence[node][start],sequence[node][end-1],sequence[donor][start],sequence[donor][end-1]
+					if sequence[node][start] != "-" and sequence[node][end-1] != "-" and sequence[donor][start] != "-" and sequence[donor][end-1] != "-":
+						milou="N"
+						TINTIN=0
+					elif sequence[node][start] == "-" and sequence[node][end-1] == "-":
+						milou="-"
+						TINTIN=1
+					elif sequence[donor][start] == "-" and sequence[donor][end-1] == "-":
+						milou="-"
+						TINTIN=2
+					elif sequence[node][start] == "-" and sequence[donor][start] == "-" and sequence[donor][end] != "-" and sequence[node][end] != "-":
+						start = start - 999
+						TINTIN=3
+						if start < 0:
+							milou="-"
+						elif sequence[node][start] != "-" and sequence[donor][start] != "-":
+							milou="N"
+					elif sequence[node][end - 1] == "-" and sequence[donor][end - 1] == "-" and sequence[node][start] != "-" and sequence[donor][start] != "-":
+						end = end + 999
+						TINTIN=4
+						if end >  LENGTH_CUMUL[node] :
+							milou="-"
+						elif sequence[node][end-1] != "-" and sequence[donor][end-1] != "-":
+							milou="N"
+					else:
+						tmp=[A,B,C,D]
+						if tmp.count("-") > 1:
+							TINTIN=5
+							milou="-"
+						else:
+							#print("node:",A,B,"donor:",C,D)
+							if A == "-":
+								while sequence[node][start] == "-":
+									start+=1
+								milou="N"
+							elif C == "-":
+								while sequence[donor][start] == "-":
+									start+=1
+								milou="N"
+							elif B == "-":
+								while sequence[node][end-1] == "-":
+									end-=1
+								milou="N"
+							elif D == "-":
+								while sequence[donor][end-1] == "-":
+									end-=1
+								milou="N"
+							else:
+								milou="-"
+								
+					new_delta = end-start
+					if new_delta < min_delta:
+						milou="-"
 				former,newer = sequence[node][start:end], sequence[donor][start:end]
 				if len(former)>0:
-					total_r +=1
-					sequence[node] =   sequence[node][:start] + sequence[donor][start:end] + sequence[node][end:]
 					iteration = 0
 					compteur = 0
 					while iteration < len(former):
@@ -515,14 +697,67 @@ while nb <= NB:
 							compteur +=1
 						iteration+=1
 					nu = float(compteur) / len(former)
-					NU.append(nu)
-					LISTE_DELTA.append(delta)
+					#### Do we want to keep it? 
+					# Yes = proceed
+					# No = recombination aborted, need to re-update MEGA to recombine somewhere else...
+					if exp_coeff == "no":
+						total_r +=1
+						sequence[node] =   sequence[node][:start] + sequence[donor][start:end] + sequence[node][end:]
+						NU.append(nu)
+						LISTE_DELTA.append(new_delta)
+					else:
+						threshold = 10**(exp_coeff*nu)
+						threshold = 1/threshold
+						number = random.random()
+						if number <= threshold:
+							#print("passed the test with ",nu,threshold,number)
+							total_r +=1
+							sequence[node] =   sequence[node][:start] + sequence[donor][start:end] + sequence[node][end:]
+							NU.append(nu)
+							LISTE_DELTA.append(new_delta)
+						else:
+							#print("did not pass the test with ",nu,threshold,number)
+							mega_i = mega_i - 1
+		elif event == "gain":
+			insertion = int(a[2])
+			#print("segment",nb,"gain in ", node , "at position",insertion)
+			total_gains += 1
+			tmp=[]
+			while len(tmp) < 999:
+				tmp.append(random.choice(ALPHA))
+			new_gene = "".join(tmp)
+			for noeud in branch:
+				if noeud == node:
+					sequence[noeud] = sequence[noeud][:insertion] + new_gene + sequence[noeud][insertion:]
+					LENGTH[node]+=len(new_gene)
+					LENGTH_CUMUL[noeud] = len(sequence[noeud] )
+				else:
+					if noeud in sequence:
+						sequence[noeud] = sequence[noeud][:insertion] + indel + sequence[noeud][insertion:]
+						LENGTH_CUMUL[noeud] = len(sequence[noeud] )
+		elif event == "loss":
+			milou="-"
+			while milou=="-":
+				point= int(round(float(LENGTH_CUMUL[node] / 999.0),0))
+				deletion = random.choice(range(point)) * 999
+				if sequence[node][deletion+3] == "-":
+					milou="-"
+				else:
+					milou="N"
+			#print("Loss",point,deletion)
+			total_losses+=1
+			sequence[node] = 	sequence[node][:deletion] + indel + sequence[node][deletion + 999:]
 					
 	#print nb," ",process[nb]," ",mutations," ",recomb
 	nb+=1
 
 
 print("total_m=",total_m,"total_r=",total_r)
+
+print("total gene gains=",total_gains)
+print("total gene copies lost=",total_losses)
+
+
 
 #print(NU[:100])
 
@@ -549,6 +784,20 @@ for node in sequence:
 		h.write(">" + rename[node] + "\n" + sequence[node] + "\n")
 
 h.close()
+
+
+if GAINS != "no" or LOSSES != "no":
+	nb=0
+	i=0
+	while i < len(sequence[node]):
+		nb+=1
+		h=open(path + "genes/gene" + str(nb) + ".fa" ,"w" )
+		for node in sequence:
+			if node != "root" and type[node] == "tip":
+				h.write(">" + rename[node] + "\n" + sequence[node][i:i+999] + "\n")
+		h.close()
+		i+=999
+	i+=1
 
 
 
