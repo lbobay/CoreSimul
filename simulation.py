@@ -786,18 +786,36 @@ for node in sequence:
 h.close()
 
 
+
+
+
 if GAINS != "no" or LOSSES != "no":
+	core={}
+	for node in sequence:
+		if node != "root" and type[node] == "tip":
+			core[node]=[]
 	nb=0
 	i=0
 	while i < len(sequence[node]):
 		nb+=1
+		tag=0
 		h=open(path + "genes/gene" + str(nb) + ".fa" ,"w" )
 		for node in sequence:
 			if node != "root" and type[node] == "tip":
 				h.write(">" + rename[node] + "\n" + sequence[node][i:i+999] + "\n")
+				if sequence[node][i] == "-":
+					tag=1
 		h.close()
+		if tag==0:
+			for node in core:
+				core[node].append(sequence[node][i:i+999] )
 		i+=999
 	i+=1
+	g=open(path + "core.fa" ,"w" )
+	for node in core:
+		g.write(">" + node + "\n" + "".join(core[node]) + "\n")
+	g.close()
+
 
 
 
@@ -824,6 +842,8 @@ else:
 	rm=str(COEFF * DELTA *  sum(NU) / len(NU))
 	nu = str(sum(NU) / len(NU)) 
 h.write("rm= " + rm + "\n" + "Rho= " + str(COEFF) + "\nDelta= " + str(DELTA) + "\nNu= " + str(nu) + "\nTotal_mutations= " + str(total_m) + "\nTotal_recombination_events= " + str(total_r) + "\n" )
+h.write("Gene gains= " + str(total_gains) + "\n")
+h.write("Gene losses= " + str(total_losses) + "\n")
 h.close()
 
 print("DONE")
