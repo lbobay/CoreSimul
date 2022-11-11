@@ -4,6 +4,20 @@
 ########################################################################
 import math
 
+class Recombination:
+	def __init__(self, donor, acceptor, startpos, endpos):
+		self.donor = donor
+		self.acceptor = acceptor
+		self.startpos = startpos
+		self.endpos = endpos
+
+	def to_csv(self, sep=","):
+		return "{donor}{sep}{acceptor}{sep}{startpos}{sep}{endpos}\n".format(
+			sep=sep, donor=self.donor, acceptor=self.acceptor, startpos=self.startpos, endpos=self.endpos)	
+
+	def csv_header(sep=","):
+		return "Donor{sep}Acceptor{sep}Start position{sep}End position\n".format(sep=sep)	
+
  
 def mean( echantillon ) :
     size = len( echantillon )
@@ -523,6 +537,7 @@ NB = max(process.keys())
 ########  Simulate evolution with recombination
 
 print("Simulate evolution with recombination AND SELECTION")
+recombination_log = []
 
 LENGTH,LENGTH_CUMUL={},{}
 for node in branch:
@@ -707,6 +722,7 @@ while nb <= NB:
 					# No = recombination aborted, need to re-update MEGA to recombine somewhere else...
 					if exp_coeff == "no":
 						total_r +=1
+						recombination_log += [Recombination(donor, node, start, end)]
 						sequence[node] =   sequence[node][:start] + sequence[donor][start:end] + sequence[node][end:]
 						NU.append(nu)
 						LISTE_DELTA.append(new_delta)
@@ -765,6 +781,13 @@ print("total gene copies lost=",total_losses)
 
 
 #print(NU[:100])
+
+# Write recombination log
+
+with open(os.path.join(path, "recombinations.txt"), "w") as rlog:
+	rlog.write(Recombination.csv_header())
+	for recombination_event in recombination_log:
+		rlog.write(recombination_event.to_csv())
 
 h=open(path + "nu.txt","w")
 if len(NU)> 0:
