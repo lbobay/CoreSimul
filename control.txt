@@ -19,4 +19,5 @@ KAPPA=1.1       							# Transition/transversion parameter for K2P model (defaul
 #LOSS_RATE = 0.001							# Frequency of gene losses relative to substitution rate (default = none)
 #MIN_DELTA  = 10							# Minimum length of recombining fragments (default = 1 nucleotide)	
 #EXP_COEFF = 18.1							# Probability of recombination depends on sequence divergence (default = no)
+#RSEED=1234                                 # Random seed for reproducibility (default = current system time milliseconds)
 

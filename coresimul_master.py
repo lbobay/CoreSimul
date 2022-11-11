@@ -3,7 +3,7 @@
 
 import os
 import sys
-
+import time
 
 version = sys.version
 
@@ -49,6 +49,7 @@ parameters["GAIN_RATE"]="none"
 parameters["LOSS_RATE"]="none"
 parameters["MIN_DELTA"]="1"
 parameters["EXP_COEFF"]="no"
+parameters["RSEED"]=round(time.time()*1000)
 
 f=open(control_file,"r")
 for l in f:
@@ -93,6 +94,7 @@ model = parameters["SUB_MODEL"]
 gain_rate=parameters["GAIN_RATE"]
 loss_rate = parameters["LOSS_RATE"]
 min_delta = parameters["MIN_DELTA"]
+rseed = parameters["RSEED"]
 
 if parameters["EXP_COEFF"] == "no" or parameters["EXP_COEFF"] == "n":
 	exp_coeff = "no"
@@ -222,7 +224,7 @@ print("MIN_DELTA=",min_delta)
 print("################\n")
 
 
-os.system("python " + loc + "simulation.py " + str(exp_coeff) + " " + min_delta + " " + loss_rate + " " + gain_rate + " " + model + " " + sub_rate + " "  + path_to_seq + " " + sub + " " + str(kappa) + " " + str(GC) + " " + str(L) +  " " + str(COEFF) + " " + str(DELTA) + " "  + str(coeff) + " " + path)
+os.system("python " + loc + "simulation.py " + str(rseed) + " " + str(exp_coeff) + " " + min_delta + " " + loss_rate + " " + gain_rate + " " + model + " " + sub_rate + " "  + path_to_seq + " " + sub + " " + str(kappa) + " " + str(GC) + " " + str(L) +  " " + str(COEFF) + " " + str(DELTA) + " "  + str(coeff) + " " + path)
 
 
 

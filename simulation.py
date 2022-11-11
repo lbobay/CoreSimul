@@ -82,6 +82,11 @@ gain_rate = sys.argv[-12]
 loss_rate = sys.argv[-13] 
 min_delta = float(sys.argv[-14])
 exp_coeff = sys.argv[-15]
+rseed = sys.argv[-16]
+
+print("Setting random seed: " + str(rseed))
+random.seed(int(rseed))
+numpy.random.seed(int(rseed))
 
 if exp_coeff != "no":
 	exp_coeff = float(exp_coeff)
