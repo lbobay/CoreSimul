@@ -376,11 +376,11 @@ else:
 		else:
 			seq+=l.strip("\n").upper()
 	f.close()
+	L=len(seq)
 	GC = (seq.count("G") + seq.count("C")) / (seq.count("A") + seq.count("T") + seq.count("G") + seq.count("C"))
 	GC = round(GC * 100,0)
 	AT = 10000-GC
 	AT = round(AT,0)
-
 	#print(GC," ",AT)
 	ALPHA=[]
 	i=0
